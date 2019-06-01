@@ -23,6 +23,7 @@ export default {
       });
       window.localStorage.setItem("token", response.data.accessToken);
       window.localStorage.setItem("expiration", response.data.accessTokenExpiresAt);
+      window.localStorage.setItem("refreshToken", response.data.refreshToken);
       return response.data.accessToken;
     } catch (e) {
       return e.response.data;
