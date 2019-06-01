@@ -23,8 +23,12 @@ function loggedIn() {
 
   response.then((result) => {
     if (result.statusCode == 400) {
+    
+      console.log(result)
       return false;
     } else {
+    
+      console.log(result)
       return true;
     }
   });
@@ -34,7 +38,6 @@ function requireAuth() {
   if (!loggedIn() ) {
     hist.push(`/login`);
     hist.clear
-    return <Redirect to={`/login`} />
   }
 }
 
@@ -42,8 +45,8 @@ hist.listen((location, action) => {
   console.log(`The current URL is ${location.pathname}`)
   console.log(`The last navigation action was ${action}`)
   document.body.style = `background-color: "white"`;
-  if (location.pathname != "/login" && window.localStorage.getItem("token") == null) {
-    requireAuth()
+  if (location.pathname != "/login" && window.localStorage.getItem("token") == undefined) {
+      requireAuth()
   }
 })
 
@@ -52,7 +55,7 @@ ReactDOM.render(
     <Switch>
       <Route path={`/login`} component={Login} />
       {indexRoutes.map((prop, key) => {
-        return <Route path={prop.path} component={prop.component} key={key} onEnter={requireAuth()} />;
+        return <Route path={prop.path} component={prop.component} key={key} onEnter={requireAuth} />;
       })}
 
     </Switch>
