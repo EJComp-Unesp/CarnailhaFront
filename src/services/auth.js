@@ -2,6 +2,7 @@ import constants from "./constants";
 import Axios from "axios";
 import qs from "qs";
 
+
 const url = `${constants.base_url}/oauth/token`;
 
 const headers = {
@@ -9,17 +10,9 @@ const headers = {
   "Content-Type": "application/x-www-form-urlencoded"
 };
 
-const data = {
-  client_id: "carnailhaWeb",
-  client_secret: "carnaweb",
-  grant_type: "password",
-  username: "admin",
-  password: "admin123",
-  scope: "teste"
-};
 
 export default {
-  post: async () => {
+  post: async (data) => {
     let response;
     try {
       response = await Axios({
@@ -29,6 +22,8 @@ export default {
         url
       });
       window.localStorage.setItem("token", response.data.accessToken);
+      window.localStorage.setItem("expiration", response.data.accessTokenExpiresAt);
+      window.localStorage.setItem("refreshToken", response.data.refreshToken);
       return response.data.accessToken;
     } catch (e) {
       return e.response.data;

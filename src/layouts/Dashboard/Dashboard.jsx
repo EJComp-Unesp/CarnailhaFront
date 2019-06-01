@@ -19,12 +19,25 @@ import dashboardStyle from "assets/jss/material-dashboard-react/layouts/dashboar
 import image from "assets/img/bg-01.jpg";
 import logo from "assets/img/logo.png";
 
+function loggedIn() {
+  if (window.localStorage.getItem("token") != null)
+    return true
+  else
+    return false
+}
+
+function requireAuth(prop) {
+  if (!loggedIn()) {
+    <Redirect from={prop} to={`/login`}/>
+  }
+}
+
 const switchRoutes = (
   <Switch>
     {dashboardRoutes.map((prop, key) => {
       if (prop.redirect)
-        return <Redirect from={prop.path} to={prop.to} key={key} />;
-      return <Route path={prop.path} component={prop.component} key={key} />;
+        return <Redirect from={prop.path} to={prop.to} key={key}  onEnter={requireAuth(prop.path)} />;
+      return <Route path={prop.path} component={prop.component} key={key}  onEnter={requireAuth(prop.path)} />;
     })}
   </Switch>
 );
