@@ -77,6 +77,7 @@ class Login extends React.Component {
                 document.body.style = `background-color: "white"`;
         
                 return <Redirect to='/dashboard'/>
+        
             }
         });
 

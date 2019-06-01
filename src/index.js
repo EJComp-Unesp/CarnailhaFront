@@ -41,6 +41,7 @@ function requireAuth() {
 hist.listen((location, action) => {
   console.log(`The current URL is ${location.pathname}`)
   console.log(`The last navigation action was ${action}`)
+  document.body.style = `background-color: "white"`;
   if (location.pathname != "/login" && window.localStorage.getItem("token") == null) {
     requireAuth()
   }
