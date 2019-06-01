@@ -24,6 +24,7 @@ import Testimonial from "views/Testimonial/Testimonial.jsx";
 //import NotificationsPage from "views/Notifications/Notifications.jsx";
 //import UpgradeToPro from "views/UpgradeToPro/UpgradeToPro.jsx";
 import Drinks from "../views/Drinks/Drinks";
+import Partners from "../views/Partners/Partners";
 
 const dashboardRoutes = [
   // {
@@ -60,6 +61,13 @@ const dashboardRoutes = [
     navbarName: "Bebidas",
     icon: "local_drink",
     component: Drinks
+  },
+  {
+    path: "/partners",
+    sidebarName: "Parceiros",
+    navbarName: "Parceiros",
+    icon: Person,
+    component: Partners
   },
   // {
   //   path: "/table",
