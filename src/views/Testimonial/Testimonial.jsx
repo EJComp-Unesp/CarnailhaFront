@@ -185,7 +185,7 @@ class Testimonials extends React.Component {
     img: "",
     active: true,
 
-    action: 0, //0- listagem, 1- insert estado, 2- insert cidade, 3- insert promoter
+    action: 0,
     indexState: null,
     notification: "",
     color: "info",
@@ -200,7 +200,7 @@ class Testimonials extends React.Component {
 
   handleChangeSwitch = name => event => {
     this.setState({ [name]: event.target.checked }, () => {
-      console.log("alternou para "+ this.state.active)
+      console.log("alternou para " + this.state.active)
     });
 
   };
@@ -231,8 +231,6 @@ class Testimonials extends React.Component {
   _save = async () => {
     const { testimonials, name, testimonial, file, rows } = this.state;
 
-    console.log(file);
-
     const uploadResponse = await UploadService.post(file);
 
     const data = {
@@ -262,20 +260,24 @@ class Testimonials extends React.Component {
     this.showNotification("tc", msg, types);
     this.handleClearFields();
   };
+
   _update = async () => {
-    const { testimonials, rows, id, _id, name, testimonial, path } = this.state;
+    const { testimonials, rows, id, _id, name, testimonial, file } = this.state;
+
+    const uploadResponse = await UploadService.post(file);
 
     const data = {
       ...testimonials[id],
-      _id: _id,
-      name: name,
-      testimonial: testimonial,
-      img: path
+      _id,
+      name,
+      testimonial,
+      img: uploadResponse.data.img,
     };
 
     const response = await Service.update(data);
     let msg = "",
       types = "";
+
     if (response.data.code != 200) {
       for (let x in response.data.errors) {
         msg += response.data.errors[x].msg + ", ";
@@ -396,7 +398,7 @@ class Testimonials extends React.Component {
                   fullWidth
                 />
 
-                <input type="file" onChange={this.handleChangeImg} />
+                <input type="file" onChange={this.handleChangeImg}  />
 
                 <GridItem xs={12} sm={12} md={12} style={{ marginTop: "23px" }}>
                   <img src={this.state.img} />
@@ -485,14 +487,7 @@ class Testimonials extends React.Component {
                   <TableCell component="th" scope="row">
                     {row.name}
                   </TableCell>
-                  {<TableCell align="right">
-                    {<Switch
-                      checked={row.active}
-                      onChange={this.handleChangeSwitch("active")}
-                      value={this.state.active}
-                      color="primary"
-                    />}
-                  </TableCell>}
+                  <TableCell align="right">Ativo</TableCell>
                   <TableCell align="right">
                     <IconButton aria-label="Edit" onClick={() => {
                       let ac = this.state.testimonials[row.id - 1];
@@ -510,15 +505,17 @@ class Testimonials extends React.Component {
                     }}>
                       <EditIcon fontSize="small" />
                     </IconButton>
-                    <IconButton aria-label="Delete" onClick={() => {
-                      console.log(row._id);
-                      this.setState({
-                        id: row.id,
-                        _id: row._id
-                      }, () => {
-                        this._delete()
-                      });
-                    }}>
+                    <IconButton aria-label="Delete" onClick={
+                      () => {
+                        console.log(row._id);
+                        this.setState({
+                          id: row.id,
+                          _id: row._id
+                        }, () => {
+                          this._delete()
+                        });
+                      }
+                    }>
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>

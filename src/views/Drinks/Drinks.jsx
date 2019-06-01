@@ -181,6 +181,7 @@ class Drinks extends React.Component {
     name: "",
     quantity: "",
     icon: "",
+    active: true,
 
     action: 0, //0- listagem, 1- insert estado, 2- insert cidade, 3- insert promoter
     indexState: null,
@@ -200,7 +201,7 @@ class Drinks extends React.Component {
 
     this.setState({
       file: e.target.files[0],
-      img: URL.createObjectURL(e.target.files[0])
+      icon: URL.createObjectURL(e.target.files[0])
     });
   };
 
@@ -253,14 +254,16 @@ class Drinks extends React.Component {
     this.handleClearFields();
   };
   _update = async () => {
-    const { drinks, rows, id, _id, name, quantity, path } = this.state;
+    const { drinks, rows, id, _id, name, quantity, file } = this.state;
+
+    const uploadResponse = await UploadService.post(file);
 
     const data = {
       ...drinks[id],
-      _id: _id,
-      name: name,
-      quantity: quantity,
-      icon: path
+      _id,
+      name,
+      quantity,
+      icon: uploadResponse.data.img
     };
 
     const response = await Service.update(data);
@@ -386,7 +389,7 @@ class Drinks extends React.Component {
                   fullWidth
                 />
 
-                <input type="file" onChange={this.handleChangeImg} />
+                <input type="file" onChange={this.handleChangeImg} style={{ marginTop: "23px" }} />
 
                 <GridItem xs={12} sm={12} md={12} style={{ marginTop: "23px" }}>
                   <img src={this.state.icon} />
@@ -472,7 +475,7 @@ class Drinks extends React.Component {
                   <TableCell component="th" scope="row">
                     {row.name}
                   </TableCell>
-
+                  <TableCell align="right">Ativo</TableCell>
                   <TableCell align="right">
                     <IconButton aria-label="Edit" onClick={() => {
                       let ac = this.state.drinks[row.id - 1];
