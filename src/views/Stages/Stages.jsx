@@ -31,6 +31,7 @@ import KeyboardArrowRight from "@material-ui/icons/KeyboardArrowRight";
 import LastPageIcon from "@material-ui/icons/LastPage";
 import Service from "../../services/stages";
 import UploadService from "../../services/upload_image";
+import Switch from '@material-ui/core/Switch';
 
 import constants from "../../services/constants";
 
@@ -38,8 +39,8 @@ const actionsStyles = theme => ({
   root: {
     flexShrink: 0,
     color: theme.palette.text.secondary,
-    marginLeft: theme.spacing.unit * 2.5
-  }
+    marginLeft: theme.spacing.unit * 2.5,
+  },
 });
 
 class TablePaginationActions extends React.Component {
@@ -58,7 +59,7 @@ class TablePaginationActions extends React.Component {
   handleLastPageButtonClick = event => {
     this.props.onChangePage(
       event,
-      Math.max(0, Math.ceil(this.props.count / this.props.rowsPerPage) - 1)
+      Math.max(0, Math.ceil(this.props.count / this.props.rowsPerPage) - 1),
     );
   };
 
@@ -72,71 +73,56 @@ class TablePaginationActions extends React.Component {
           disabled={page === 0}
           aria-label="First Page"
         >
-          {theme.direction === "rtl" ? <LastPageIcon /> : <FirstPageIcon />}
+          {theme.direction === 'rtl' ? <LastPageIcon /> : <FirstPageIcon />}
         </IconButton>
         <IconButton
           onClick={this.handleBackButtonClick}
           disabled={page === 0}
           aria-label="Previous Page"
         >
-          {theme.direction === "rtl" ? (
-            <KeyboardArrowRight />
-          ) : (
-            <KeyboardArrowLeft />
-          )}
+          {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
         </IconButton>
         <IconButton
           onClick={this.handleNextButtonClick}
           disabled={page >= Math.ceil(count / rowsPerPage) - 1}
           aria-label="Next Page"
         >
-          {theme.direction === "rtl" ? (
-            <KeyboardArrowLeft />
-          ) : (
-            <KeyboardArrowRight />
-          )}
+          {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
         </IconButton>
         <IconButton
           onClick={this.handleLastPageButtonClick}
           disabled={page >= Math.ceil(count / rowsPerPage) - 1}
           aria-label="Last Page"
         >
-          {theme.direction === "rtl" ? <FirstPageIcon /> : <LastPageIcon />}
+          {theme.direction === 'rtl' ? <FirstPageIcon /> : <LastPageIcon />}
         </IconButton>
       </div>
     );
   }
 }
 
-TablePaginationActions.propTypes = {
-  classes: PropTypes.object.isRequired,
-  count: PropTypes.number.isRequired,
-  onChangePage: PropTypes.func.isRequired,
-  page: PropTypes.number.isRequired,
-  rowsPerPage: PropTypes.number.isRequired,
-  theme: PropTypes.object.isRequired
-};
 
-const TablePaginationActionsWrapped = withStyles(actionsStyles, {
-  withTheme: true
-})(TablePaginationActions);
+
+const TablePaginationActionsWrapped = withStyles(actionsStyles, { withTheme: true })(
+  TablePaginationActions,
+);
 
 let counter = 0;
-function createData(name, img, status, _id) {
+function createData(name, _id) {
   counter += 1;
-  return { id: counter, name, img, status, _id };
+  return { id: counter, name, _id };
 }
 
 const styles = theme => ({
   root: {
-    width: "100%",
-    marginTop: theme.spacing.unit * 3
+    width: '100%',
+    marginTop: theme.spacing.unit * 3,
   },
   table: {
-    minWidth: 500
+    minWidth: 500,
   },
   tableWrapper: {
-    overflowX: "auto"
+    overflowX: 'auto',
   },
   cardCategoryWhite: {
     color: "rgba(255,255,255,.62)",
@@ -185,10 +171,12 @@ class Stages extends React.Component {
     id: undefined,
     _id: undefined,
     name: "",
+    stage: "",
     img: "",
-    file: "",
+    active: true,
 
-    action: 0,
+    action: 0, 
+    indexState: null,
     notification: "",
     color: "info",
     tc: false,
@@ -200,6 +188,22 @@ class Stages extends React.Component {
     });
   };
 
+  handleChangeSwitch = name => event => {
+    this.setState({ [name]: event.target.checked }, () => {
+      console.log("alternou para "+ this.state.active)
+    });
+
+  };
+
+  handleChangeImg = e => {
+    console.log(e.target.files[0]);
+
+    this.setState({
+      file: e.target.files[0],
+      img: URL.createObjectURL(e.target.files[0])
+    });
+  };
+
   _load = async () => {
     // eslint-disable-next-line no-console
     const response = await Service.get();
@@ -207,35 +211,28 @@ class Stages extends React.Component {
     if (response.data.code === 200) {
       let ac = [];
       response.data.stages.map(stage => {
-        ac.push(createData(stage.name, stage.active, stage._id));
-      });
+        ac.push(createData(stage.name, stage._id));
+      })
       this.setState({ rows: ac, stages: response.data.stages });
     } else {
       alert("Um erro ocorreu");
     }
   };
-
   _save = async () => {
-    const { file, name } = this.state;
-
-    console.log(file);
+    const { stages, name, stage, file, rows } = this.state;
 
     const uploadResponse = await UploadService.post(file);
 
-    let data = { 
-        name, 
-        img: uploadResponse.data.img 
+    const data = {
+      name: name,
+      stage: stage,
+      img: uploadResponse.data.img
     };
-
-    console.log("#############@@@@@@",data);
 
     const response = await Service.post(data);
 
-    
-
     let msg = "",
       types = "";
-
     if (response.data.code != 201) {
       console.log(response.data.errors);
       for (let x in response.data.errors) {
@@ -243,36 +240,88 @@ class Stages extends React.Component {
       }
       types = "danger";
     } else {
-      let { stages, rows } = this.state;
-
       msg = "Cadastrado com sucesso!";
       types = "success";
-      stages.push(response.data.accommodation);
-      rows.push(
-        createData(
-          response.data.stage.name,
-          response.data.stage.img,
-          response.data.stage.active,
-          response.data.stage._id
-        )
-      );
+      stages.push(response.data.stage);
+      rows.push(createData(response.data.stage.name, response.data.stage._id))
       this.setState({ stages, rows });
     }
     this.setState({ action: 1 });
     this.showNotification("tc", msg, types);
     this.handleClearFields();
   };
-  _update = async () => {};
 
-  _delete = async () => {};
+  _update = async () => {
+    const { stages, rows, id, _id, name, stage, file } = this.state;
 
+    const uploadResponse = await UploadService.post(file);
+
+    const data = {
+      ...stages[id],
+      _id,
+      name,
+      stage,
+      img: uploadResponse.data.img,
+    };
+
+    const response = await Service.update(data);
+    let msg = "",
+      types = "";
+    if (response.data.code != 200) {
+      for (let x in response.data.errors) {
+        msg += response.data.errors[x].msg + ", ";
+      }
+      types = "danger";
+    } else {
+      msg = "Alterado com sucesso!";
+      types = "success";
+      let acc = stages;
+      let r = rows;
+      let count = id - 1;
+      acc[count] = response.data.stage;
+      r[count] = { id: id, name: acc[count].name, _id: acc[count]._id }
+      this.setState({ stages: acc, rows: r });
+    }
+
+    this.setState({ action: 0 });
+    this.showNotification("tc", msg, types);
+  };
+  _delete = async () => {
+    const { stages, rows, id, _id } = this.state;
+    const data = {
+      _id: _id
+    };
+
+    const response = await Service.delete(data);
+    let msg = "",
+      types = "";
+    if (response.data.code != 200) {
+      for (let x in response.data.errors) {
+        msg += response.data.errors[x].msg + ", ";
+      }
+      types = "danger";
+    } else {
+      msg = "Deletado com sucesso!";
+      types = "success";
+      let acc = stages;
+      let r = rows;
+      let count = id - 1;
+      acc.splice(count, 1);
+      rows.splice(count, 1)
+      this.setState({ stages: acc, rows: r });
+    }
+
+    this.setState({ action: 0 });
+    this.showNotification("tc", msg, types);
+  };
   showNotification(place, notification, color) {
+    console.log("MOSTRANDO NOTIFICAÇÃO");
     var x = [];
     x[place] = true;
     this.setState(x);
     this.setState({ notification, color });
     this.alertTimeout = setTimeout(
-      function() {
+      function () {
         x[place] = false;
         this.setState(x);
       }.bind(this),
@@ -284,37 +333,14 @@ class Stages extends React.Component {
   };
   handleClearFields = () => {
     const name = "",
-      img = "",
-      type = "",
-      vacancies = 0,
-      location = "",
-      structure = "",
-      extras = "",
-      contact = "",
-      price = 0.0;
-    this.setState({
-      name,
-      img,
-      type,
-      vacancies,
-      location,
-      structure,
-      extras,
-      contact,
-      price
-    });
+      stage = "",
+      img = ""
+    this.setState({ name, stage, img });
   };
   handleChangeRowsPerPage = event => {
     this.setState({ rowsPerPage: event.target.value });
   };
-  handleChangeImg = e => {
-    console.log(e.target.files[0]);
 
-    this.setState({
-      file: e.target.files[0],
-      img: URL.createObjectURL(e.target.files[0])
-    });
-  };
   componentDidMount() {
     this._load();
   }
@@ -342,21 +368,19 @@ class Stages extends React.Component {
         <GridItem xs={12} sm={12} md={12}>
           <Card>
             <CardHeader color="primary">
-              <h4 className={classes.cardTitleWhite}>
-                {this.state.action == 1 ? `Novo Palco` : `Editar Palco`}
-              </h4>
+              <h4 className={classes.cardTitleWhite}>{(this.state.action == 1) ? `Novo Palco` : `Editar Palco`}</h4>
             </CardHeader>
             <CardBody>
               <GridItem xs={12} sm={12} md={12} style={{ marginTop: "23px" }}>
                 <TextField
-                  label="Nome do Palco"
+                  label="Nome"
                   id="name"
                   value={this.state.name}
                   onChange={this.handleChange("name")}
                   fullWidth
                 />
 
-                <input type="file" onChange={this.handleChangeImg} />
+                <input type="file" onChange={this.handleChangeImg} style={{ marginTop: "23px" }} />
 
                 <GridItem xs={12} sm={12} md={12} style={{ marginTop: "23px" }}>
                   <img src={this.state.img} />
@@ -377,11 +401,14 @@ class Stages extends React.Component {
                   aria-label="Add"
                   className={classes.button}
                   onClick={() => {
-                    this.state.action == 1 ? this._save() : this._update();
-                  }}
+                    (this.state.action == 1)
+                      ? this._save()
+                      : this._update();
+                  }
+                  }
                 >
                   Salvar
-                </Button>
+                  </Button>
 
                 {/* <TextField
                   id="state"
@@ -408,69 +435,72 @@ class Stages extends React.Component {
                 </TextField> */}
               </GridItem>
             </CardBody>
+            <CardFooter>
+              <GridItem xs={12} sm={12} md={12}>
+                <p>Palcos já cadastrados:</p>
+                <ul>
+                  {this.state.stages.map(name => (
+                    // eslint-disable-next-line react/jsx-key
+                    <li>{`${name.name}`}</li>
+                  ))}
+                </ul>
+              </GridItem>
+            </CardFooter>
           </Card>
         </GridItem>
       </GridContainer>
     );
   }
+
+
+
   renderList() {
     const { classes } = this.props;
     const { rows, rowsPerPage, page } = this.state;
-    const emptyRows =
-      rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
+    const emptyRows = rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
 
     return (
       <Paper className={classes.root}>
         <div className={classes.tableWrapper}>
           <Table className={classes.table}>
             <TableBody>
-              {rows
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map(row => (
-                  <TableRow key={row.id}>
-                    <TableCell component="th" scope="row">
-                      {row.name}
-                    </TableCell>
-                    <TableCell align="right">Ativo</TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        aria-label="Edit"
-                        onClick={() => {
-                          let ac = this.state.stages[row.id - 1];
-                          console.log(ac);
-                          ac.img = ac.img.replace("&#x5C;","/");
-                          this.setState({
-                            action: 2,
-                            id: row.id,
-                            _id: row._id,
-                            name: ac.name,
-                            img: `http://localhost:5000/${ac.img}`
-                          });
-                          // this.handleClearFields();
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        aria-label="Delete"
-                        onClick={() => {
-                          console.log(row._id);
-                          this.setState(
-                            {
-                              id: row.id,
-                              _id: row._id
-                            },
-                            () => {
-                              this._delete();
-                            }
-                          );
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => (
+                <TableRow key={row.id}>
+                  <TableCell component="th" scope="row">
+                    {row.name}
+                  </TableCell>
+                  <TableCell align="right">Ativo</TableCell>
+                  <TableCell align="right">
+                    <IconButton aria-label="Edit" onClick={() => {
+                      let ac = this.state.stages[row.id - 1];
+                      console.log(row.id);
+                      this.setState({
+                        action: 2,
+                        id: row.id,
+                        _id: row._id,
+                        name: ac.name,
+                        stage: ac.stage,
+                        img: `http://localhost:5000/${ac.img}`,
+                        path: ac.img
+                      });
+                      // this.handleClearFields();
+                    }}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton aria-label="Delete" onClick={() => {
+                      console.log(row._id);
+                      this.setState({
+                        id: row.id,
+                        _id: row._id
+                      }, () => {
+                        this._delete()
+                      });
+                    }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 48 * emptyRows }}>
                   <TableCell colSpan={6} />
@@ -486,7 +516,7 @@ class Stages extends React.Component {
                   rowsPerPage={rowsPerPage}
                   page={page}
                   SelectProps={{
-                    native: true
+                    native: true,
                   }}
                   onChangePage={this.handleChangePage}
                   onChangeRowsPerPage={this.handleChangeRowsPerPage}
@@ -503,33 +533,35 @@ class Stages extends React.Component {
     const { classes } = this.props;
     switch (this.state.action) {
       case 0:
-        return (
-          <GridItem xs={12} sm={12} md={12}>
-            <Card>
-              {this.renderSnackbar()}
-              <CardHeader color="primary">
-                <h4 className={classes.cardTitleWhite}>Palcos Cadastrados</h4>
-                <p>
-                  Área de gerenciamento da área de palcos do site. Você pode
-                  inserir um novo palco e editar os palcos já existentes.
+        return (<GridItem xs={12} sm={12} md={12}>
+          <Card>
+            {this.renderSnackbar()}
+            <CardHeader color="primary">
+              <h4 className={classes.cardTitleWhite}>
+                Palcos Cadastradas
+                </h4>
+              <p>
+                Área de gerenciamento dos palcos do site. Você pode inserir
+                um novo palco e editar os palcos já existentes.
                 </p>
-                <Button
-                  onClick={() => {
-                    this.setState({ action: 1 });
-                    this.handleClearFields();
-                  }}
-                  style={{ alignItems: "center", justifyContent: "center" }}
-                  round
-                  color="success"
-                  className={classes.fabButton}
-                >
-                  <AddIcon /> Novo Palco
+              <Button
+                onClick={() => {
+                  this.setState({ action: 1 });
+                  this.handleClearFields();
+                }}
+                style={{ alignItems: "center", justifyContent: "center" }}
+                round
+                color="success"
+                className={classes.fabButton}
+              >
+                <AddIcon /> Novo Palco
                 </Button>
-              </CardHeader>
-              <CardBody>{this.renderList()};</CardBody>
-            </Card>
-          </GridItem>
-        );
+            </CardHeader>
+            <CardBody>
+              {this.renderList()}
+            </CardBody>
+          </Card>
+        </GridItem>);
       case 1:
         return this.renderFormStage();
       case 2:
@@ -539,7 +571,7 @@ class Stages extends React.Component {
 }
 
 Stages.propTypes = {
-  classes: PropTypes.object.isRequired
+  classes: PropTypes.object.isRequired,
 };
 
 export default withStyles(styles)(Stages);
